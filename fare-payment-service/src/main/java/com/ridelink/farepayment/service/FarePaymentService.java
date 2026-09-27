@@ -1,5 +1,7 @@
 package com.ridelink.farepayment.service;
 
+import com.ridelink.farepayment.client.RideServiceClient;
+import com.ridelink.farepayment.dto.RideDetailsDto;
 import com.ridelink.farepayment.dto.FareEstimateRequest;
 import com.ridelink.farepayment.dto.FareEstimateResponse;
 import com.ridelink.farepayment.entity.Payment;
@@ -17,6 +19,7 @@ import java.util.Random;
 public class FarePaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final RideServiceClient rideServiceClient;
     
     // Assignment Requirement: clearly documented calculation rule (Updated for Rupees)
     private static final BigDecimal BASE_FARE = new BigDecimal("300.00");
@@ -34,15 +37,26 @@ public class FarePaymentService {
         );
     }
 
-    // Final Fare Calculation using MOCK DATA (Before interacting with Ride Service)
+    // Final Fare Calculation using OpenFeign (with fallback to MOCK DATA)
     public Payment calculateFinalFare(UUID rideId, UUID passengerId) {
-        // 1. MOCK DATA: Pretend we called the Ride Management Service and got these actual values
-        double mockActualDistanceKm = 12.5; 
-        double mockWaitTimeMinutes = 5.0;   
+        // Default Mock Data
+        double actualDistanceKm = 12.5; 
+        double waitTimeMinutes = 5.0;   
+        
+        try {
+            // 1. INTERSERVICE COMMUNICATION: Try to call Member 3's Service!
+            System.out.println("Calling Ride Management Service for ride: " + rideId);
+            RideDetailsDto rideDetails = rideServiceClient.getRideDetails(rideId);
+            actualDistanceKm = rideDetails.getActualDistanceKm();
+            waitTimeMinutes = rideDetails.getWaitTimeMinutes();
+            System.out.println("Success! Got real data from Member 3.");
+        } catch (Exception e) {
+            System.out.println("Member 3's service is down or not ready! Falling back to mock data...");
+        }
         
         // 2. Final Fare Calculation Rule
-        BigDecimal distanceFare = BigDecimal.valueOf(mockActualDistanceKm).multiply(PER_KM_RATE);
-        BigDecimal waitTimeFare = BigDecimal.valueOf(mockWaitTimeMinutes).multiply(PER_MINUTE_WAIT_RATE);
+        BigDecimal distanceFare = BigDecimal.valueOf(actualDistanceKm).multiply(PER_KM_RATE);
+        BigDecimal waitTimeFare = BigDecimal.valueOf(waitTimeMinutes).multiply(PER_MINUTE_WAIT_RATE);
         
         BigDecimal finalAmount = BASE_FARE.add(distanceFare).add(waitTimeFare).setScale(2, RoundingMode.HALF_UP);
         

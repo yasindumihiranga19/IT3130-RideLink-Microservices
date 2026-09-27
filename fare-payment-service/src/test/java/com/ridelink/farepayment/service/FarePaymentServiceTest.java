@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import com.ridelink.farepayment.client.RideServiceClient;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -24,6 +25,9 @@ public class FarePaymentServiceTest {
 
     @Mock
     private PaymentRepository paymentRepository;
+
+    @Mock
+    private RideServiceClient rideServiceClient;
 
     @InjectMocks
     private FarePaymentService farePaymentService;
