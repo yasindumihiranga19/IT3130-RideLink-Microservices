@@ -6,6 +6,7 @@ import com.ridelink.account.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.ridelink.account.dto.LoginRequest;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -22,4 +23,8 @@ public class AccountController {
     public Account register(@Valid @RequestBody RegisterRequest request) {
         return accountService.register(request);
     }
+   @PostMapping("/login")
+public String login(@Valid @RequestBody LoginRequest request) {
+    return accountService.login(request);
+} 
 }
