@@ -1,24 +1,31 @@
 package com.ridelink.account.security;
 
+import com.ridelink.account.repository.AccountRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final AccountRepository accountRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            AccountRepository accountRepository) {
+
         this.jwtService = jwtService;
+        this.accountRepository = accountRepository;
     }
 
     @Override
@@ -41,16 +48,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String email = jwtService.extractEmail(token);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            Collections.emptyList()
-                    );
+            accountRepository.findByEmail(email).ifPresent(account -> {
 
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(authentication);
+                if (account.getStatus().name().equals("ACTIVE")) {
+
+                    String authority =
+                            "ROLE_" + account.getRole().name();
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    List.of(
+                                            new SimpleGrantedAuthority(authority)
+                                    )
+                            );
+
+                    SecurityContextHolder
+                            .getContext()
+                            .setAuthentication(authentication);
+                }
+            });
         }
 
         filterChain.doFilter(request, response);
