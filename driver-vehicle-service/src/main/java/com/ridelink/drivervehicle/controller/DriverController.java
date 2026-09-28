@@ -3,6 +3,7 @@ package com.ridelink.drivervehicle.controller;
 import com.ridelink.drivervehicle.model.AvailabilityStatus;
 import com.ridelink.drivervehicle.model.Driver;
 import com.ridelink.drivervehicle.model.Vehicle;
+import com.ridelink.drivervehicle.exception.ConflictException;
 import com.ridelink.drivervehicle.repository.DriverRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -112,6 +113,10 @@ public class DriverController {
         Driver driver = optionalDriver.get();
         vehicle.setDriver(driver);
         driver.setVehicle(vehicle);
+
+        if (driver.getVehicle() != null) {
+            throw new ConflictException("Driver " + id + " already has a vehicle assigned");
+        }
 
         Driver saved = driverRepository.save(driver);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
