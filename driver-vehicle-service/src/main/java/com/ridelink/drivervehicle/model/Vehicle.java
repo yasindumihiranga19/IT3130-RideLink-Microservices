@@ -1,5 +1,6 @@
 package com.ridelink.drivervehicle.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,7 @@ public class Vehicle {
 
     @OneToOne
     @JoinColumn(name = "driver_id", nullable = false, unique = true)
+    @JsonIgnore
     private Driver driver;
 
     @Column(name = "vehicle_number", nullable = false, unique = true)

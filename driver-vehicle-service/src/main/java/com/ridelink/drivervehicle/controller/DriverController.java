@@ -2,6 +2,7 @@ package com.ridelink.drivervehicle.controller;
 
 import com.ridelink.drivervehicle.model.AvailabilityStatus;
 import com.ridelink.drivervehicle.model.Driver;
+import com.ridelink.drivervehicle.model.Vehicle;
 import com.ridelink.drivervehicle.repository.DriverRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -96,5 +97,23 @@ public class DriverController {
             drivers = driverRepository.findByAvailabilityStatus(AvailabilityStatus.AVAILABLE);
         }
         return ResponseEntity.ok(drivers);
+    }
+        // 7. Add/update vehicle for a driver
+    @PostMapping("/{id}/vehicle")
+    public ResponseEntity<Driver> addVehicle(
+            @PathVariable Long id,
+            @Valid @RequestBody Vehicle vehicle) {
+
+        Optional<Driver> optionalDriver = driverRepository.findById(id);
+        if (optionalDriver.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        Driver driver = optionalDriver.get();
+        vehicle.setDriver(driver);
+        driver.setVehicle(vehicle);
+
+        Driver saved = driverRepository.save(driver);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 }
