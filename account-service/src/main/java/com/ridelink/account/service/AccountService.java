@@ -9,6 +9,7 @@ import com.ridelink.account.repository.AccountRepository;
 import com.ridelink.account.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.ridelink.account.dto.AccountResponse;
 
 @Service
 public class AccountService {
@@ -24,6 +25,16 @@ public class AccountService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
+    public AccountResponse getProfile(String email) {
+
+    Account account = accountRepository
+            .findByEmail(email)
+            .orElseThrow(() ->
+                    new RuntimeException("Account not found")
+            );
+
+    return AccountResponse.from(account);
+}
 
     public Account register(RegisterRequest request) {
 
