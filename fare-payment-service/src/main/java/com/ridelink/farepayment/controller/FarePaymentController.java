@@ -7,12 +7,14 @@ import com.ridelink.farepayment.service.FarePaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/fares")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "Bearer Authentication")
 public class FarePaymentController {
 
     private final FarePaymentService farePaymentService;

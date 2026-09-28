@@ -24,7 +24,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Member 1 (Account Service) must use this exact same secret key to generate the token!
-    @Value("${jwt.secret:defaultSecretKeyWhichShouldBeAtLeast32BytesLongForHS256}")
+    @Value("${jwt.secret:ridelink-dev-secret-key-change-me-32chars}")
     private String jwtSecret;
 
     @Override
