@@ -99,7 +99,7 @@ public class DriverController {
         }
         return ResponseEntity.ok(drivers);
     }
-        // 7. Add/update vehicle for a driver
+     // 7. Add vehicle for a driver
     @PostMapping("/{id}/vehicle")
     public ResponseEntity<Driver> addVehicle(
             @PathVariable Long id,
@@ -111,12 +111,12 @@ public class DriverController {
         }
 
         Driver driver = optionalDriver.get();
-        vehicle.setDriver(driver);
-        driver.setVehicle(vehicle);
-
         if (driver.getVehicle() != null) {
             throw new ConflictException("Driver " + id + " already has a vehicle assigned");
         }
+
+        vehicle.setDriver(driver);
+        driver.setVehicle(vehicle);
 
         Driver saved = driverRepository.save(driver);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
