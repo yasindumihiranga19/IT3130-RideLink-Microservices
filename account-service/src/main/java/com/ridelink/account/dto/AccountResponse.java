@@ -3,7 +3,7 @@ package com.ridelink.account.dto;
 import com.ridelink.account.entity.Account;
 import com.ridelink.account.enums.AccountStatus;
 import com.ridelink.account.enums.Role;
-import com.ridelink.account.dto.AccountResponse;
+
 public class AccountResponse {
 
     private Long id;
