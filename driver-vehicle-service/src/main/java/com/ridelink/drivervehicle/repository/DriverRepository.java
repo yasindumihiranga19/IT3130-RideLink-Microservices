@@ -10,5 +10,5 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     List<Driver> findByAvailabilityStatus(AvailabilityStatus status);
 
-    List<Driver> findByServiceAreaAndAvailabilityStatus(String serviceArea, AvailabilityStatus status);
+    List<Driver> findByServiceAreaIgnoreCaseAndAvailabilityStatus(String serviceArea, AvailabilityStatus status);
 }
