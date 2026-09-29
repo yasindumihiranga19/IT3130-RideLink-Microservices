@@ -137,7 +137,7 @@ class AccountServiceTest {
                 account.getPassword()))
                 .thenReturn(true);
 
-        when(jwtService.generateToken(account.getEmail()))
+        when(jwtService.generateToken(account.getEmail(), account.getRole()))
                 .thenReturn("test-jwt-token");
 
         String token = accountService.login(request);
@@ -145,7 +145,7 @@ class AccountServiceTest {
         assertNotNull(token);
         assertEquals("test-jwt-token", token);
 
-        verify(jwtService).generateToken(account.getEmail());
+        verify(jwtService).generateToken(account.getEmail(), account.getRole());
     }
 
     
@@ -174,7 +174,7 @@ class AccountServiceTest {
         );
 
         verify(jwtService, never())
-                .generateToken(anyString());
+                .generateToken(anyString(), any(Role.class));
     }
 
    
@@ -225,7 +225,7 @@ class AccountServiceTest {
         );
 
         verify(jwtService, never())
-                .generateToken(anyString());
+                .generateToken(anyString(), any(Role.class));
     }
 
     
