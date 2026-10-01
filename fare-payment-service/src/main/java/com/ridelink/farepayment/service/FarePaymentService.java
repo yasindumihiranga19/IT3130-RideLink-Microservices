@@ -1,9 +1,10 @@
 package com.ridelink.farepayment.service;
 
 import com.ridelink.farepayment.client.RideServiceClient;
-import com.ridelink.farepayment.dto.RideDetailsDto;
 import com.ridelink.farepayment.dto.FareEstimateRequest;
-import com.ridelink.farepayment.dto.FareEstimateResponse;
+import com.ridelink.farepayment.dto.FareResponseDTO;
+import com.ridelink.farepayment.dto.FareCalculateRequest;
+import com.ridelink.farepayment.dto.RideResponseDto;
 import com.ridelink.farepayment.entity.Payment;
 import com.ridelink.farepayment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,50 +27,60 @@ public class FarePaymentService {
     private static final BigDecimal PER_KM_RATE = new BigDecimal("100.00");
     private static final BigDecimal PER_MINUTE_WAIT_RATE = new BigDecimal("20.00");
 
-    public FareEstimateResponse estimateFare(FareEstimateRequest request) {
-        BigDecimal distance = BigDecimal.valueOf(request.getSimulatedDistanceInKm());
+    public FareResponseDTO estimateFare(FareEstimateRequest request) {
+        double dist = request.getSimulatedDistanceInKm();
+        if (dist <= 0 && request.getPickupLocation() != null && request.getDestinationLocation() != null) {
+            dist = Math.abs(request.getPickupLocation().length() - request.getDestinationLocation().length()) * 1.5 + 2.0;
+        }
+        BigDecimal distance = BigDecimal.valueOf(dist);
         BigDecimal totalFare = BASE_FARE.add(distance.multiply(PER_KM_RATE));
         
-        return new FareEstimateResponse(
-                totalFare.setScale(2, RoundingMode.HALF_UP),
-                "LKR", // Changed to Rupees
-                "Estimated fare based on " + request.getSimulatedDistanceInKm() + "km"
-        );
+        return FareResponseDTO.builder()
+                .estimatedFare(totalFare.setScale(2, RoundingMode.HALF_UP))
+                .build();
     }
 
-    // Final Fare Calculation using OpenFeign (with fallback to MOCK DATA)
-    public Payment calculateFinalFare(UUID rideId, UUID passengerId) {
-        // Default Mock Data
+    public FareResponseDTO calculateFinalFare(FareCalculateRequest request, String token) {
+        Long rideId = request.getRideId();
         double actualDistanceKm = 12.5; 
         double waitTimeMinutes = 5.0;   
+        Long passengerId = null;
         
         try {
-            // 1. INTERSERVICE COMMUNICATION: Try to call Member 3's Service!
             System.out.println("Calling Ride Management Service for ride: " + rideId);
-            RideDetailsDto rideDetails = rideServiceClient.getRideDetails(rideId);
-            actualDistanceKm = rideDetails.getActualDistanceKm();
-            waitTimeMinutes = rideDetails.getWaitTimeMinutes();
+            RideResponseDto rideDetails = rideServiceClient.getRideDetails(rideId, token);
+            passengerId = rideDetails.getPassengerId();
+            
+            // Generate simulated distance from location strings
+            if (rideDetails.getPickupLocation() != null && rideDetails.getDestinationLocation() != null) {
+                 actualDistanceKm = Math.abs(rideDetails.getPickupLocation().length() - rideDetails.getDestinationLocation().length()) * 1.5 + 2.0;
+            } else if (request.getPickupLocation() != null && request.getDestinationLocation() != null) {
+                 actualDistanceKm = Math.abs(request.getPickupLocation().length() - request.getDestinationLocation().length()) * 1.5 + 2.0;
+            }
             System.out.println("Success! Got real data from Member 3.");
         } catch (Exception e) {
-            System.out.println("Member 3's service is down or not ready! Falling back to mock data...");
+            System.out.println("Member 3's service failed! " + e.getMessage());
+            throw new RuntimeException("Could not fetch ride details from Ride Management Service");
         }
         
-        // 2. Final Fare Calculation Rule
         BigDecimal distanceFare = BigDecimal.valueOf(actualDistanceKm).multiply(PER_KM_RATE);
         BigDecimal waitTimeFare = BigDecimal.valueOf(waitTimeMinutes).multiply(PER_MINUTE_WAIT_RATE);
         
         BigDecimal finalAmount = BASE_FARE.add(distanceFare).add(waitTimeFare).setScale(2, RoundingMode.HALF_UP);
         
-        // 3. Create the payment record (Status is PENDING until processPayment is called)
         Payment payment = new Payment();
         payment.setRideId(rideId);
         payment.setPassengerId(passengerId);
         payment.setAmount(finalAmount);
-        payment.setCurrency("LKR"); // Set currency to Rupees
+        payment.setCurrency("LKR");
         payment.setStatus("PENDING");
-        payment.setPaymentMethod("CREDIT_CARD"); // Default mock method
+        payment.setPaymentMethod("CREDIT_CARD");
         
-        return paymentRepository.save(payment);
+        paymentRepository.save(payment);
+        
+        return FareResponseDTO.builder()
+                .finalFare(finalAmount)
+                .build();
     }
 
     public Payment processPayment(Payment payment) {

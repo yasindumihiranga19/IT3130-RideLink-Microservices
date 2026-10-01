@@ -1,6 +1,8 @@
 package com.ridelink.farepayment.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,12 +17,16 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotNull(message = "Ride ID is required")
     @Column(nullable = false)
-    private UUID rideId; 
+    private Long rideId; 
 
+    @NotNull(message = "Passenger ID is required")
     @Column(nullable = false)
-    private UUID passengerId;
+    private Long passengerId;
 
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be positive")
     @Column(nullable = false)
     private BigDecimal amount;
 

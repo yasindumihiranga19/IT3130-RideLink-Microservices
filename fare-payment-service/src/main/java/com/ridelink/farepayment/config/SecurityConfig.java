@@ -2,6 +2,7 @@ package com.ridelink.farepayment.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -13,6 +14,7 @@ import com.ridelink.farepayment.security.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -28,7 +30,7 @@ public class SecurityConfig {
                 // Allow Swagger UI access without tokens
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Require a valid JWT token for all our actual API endpoints
-                .requestMatchers("/api/v1/fares/**").authenticated()
+                .requestMatchers("/api/fares/**").authenticated()
                 .anyRequest().authenticated()
             )
             // 3. Make session STATELESS (we use JWT instead of cookies)
