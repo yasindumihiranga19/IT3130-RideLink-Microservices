@@ -65,7 +65,7 @@ class RideServiceTest {
 
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
 
-        RideResponse res = rideService.createRide(10L, req);
+        RideResponse res = rideService.createRide(10L, req, "token");
 
         assertNotNull(res);
         assertEquals(RideStatus.REQUESTED, res.getStatus());
@@ -81,7 +81,7 @@ class RideServiceTest {
         when(driverClient.getAvailableDrivers("token")).thenReturn(List.of(driver));
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
 
-        RideResponse res = rideService.assignDriver(1L, "token");
+        RideResponse res = rideService.assignDriver(1L, 10L, "PASSENGER", "token");
 
         assertEquals(RideStatus.ASSIGNED, res.getStatus());
         assertEquals(20L, res.getDriverId());
@@ -92,7 +92,7 @@ class RideServiceTest {
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
         when(driverClient.getAvailableDrivers("token")).thenReturn(Collections.emptyList());
 
-        assertThrows(DriverNotAvailableException.class, () -> rideService.assignDriver(1L, "token"));
+        assertThrows(DriverNotAvailableException.class, () -> rideService.assignDriver(1L, 10L, "PASSENGER", "token"));
     }
 
     @Test
@@ -165,7 +165,7 @@ class RideServiceTest {
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
 
-        RideResponse res = rideService.cancelRide(1L, 10L, false, req);
+        RideResponse res = rideService.cancelRide(1L, 10L, false, req, "token");
 
         assertEquals(RideStatus.CANCELLED, res.getStatus());
         assertEquals("Changed mind", res.getCancellationReason());
@@ -178,6 +178,6 @@ class RideServiceTest {
 
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
 
-        assertThrows(InvalidRideStatusException.class, () -> rideService.cancelRide(1L, 10L, false, req));
+        assertThrows(InvalidRideStatusException.class, () -> rideService.cancelRide(1L, 10L, false, req, "token"));
     }
 }

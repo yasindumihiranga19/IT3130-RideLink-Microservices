@@ -37,7 +37,7 @@ public class RideController {
     public ResponseEntity<RideResponse> createRide(@Valid @RequestBody RideRequest request,
                                                    @RequestHeader("Authorization") String token) {
         AccountDTO account = accountClient.getCurrentAccount(token);
-        RideResponse response = rideService.createRide(account.getId(), request);
+        RideResponse response = rideService.createRide(account.getId(), request, token);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -46,7 +46,8 @@ public class RideController {
     @Operation(summary = "Assign a driver to a requested ride")
     public ResponseEntity<RideResponse> assignDriver(@PathVariable Long id,
                                                      @RequestHeader("Authorization") String token) {
-        RideResponse response = rideService.assignDriver(id, token);
+        AccountDTO account = accountClient.getCurrentAccount(token);
+        RideResponse response = rideService.assignDriver(id, account.getId(), account.getRole(), token);
         return ResponseEntity.ok(response);
     }
 
@@ -88,28 +89,51 @@ public class RideController {
                                                    @RequestHeader("Authorization") String token) {
         AccountDTO user = accountClient.getCurrentAccount(token);
         boolean isDriver = "DRIVER".equalsIgnoreCase(user.getRole());
-        RideResponse response = rideService.cancelRide(id, user.getId(), isDriver, request);
+        RideResponse response = rideService.cancelRide(id, user.getId(), isDriver, request, token);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('PASSENGER', 'DRIVER', 'ADMIN')")
     @Operation(summary = "Get a ride by ID")
-    public ResponseEntity<RideResponse> getRideById(@PathVariable Long id) {
-        return ResponseEntity.ok(rideService.getRideResponseById(id));
+    public ResponseEntity<RideResponse> getRideById(@PathVariable Long id,
+                                                    @RequestHeader("Authorization") String token) {
+        RideResponse ride = rideService.getRideResponseById(id);
+        AccountDTO account = accountClient.getCurrentAccount(token);
+        
+        if (!"ADMIN".equalsIgnoreCase(account.getRole())) {
+            if ("PASSENGER".equalsIgnoreCase(account.getRole()) && !ride.getPassengerId().equals(account.getId())) {
+                throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view your own rides.");
+            }
+            if ("DRIVER".equalsIgnoreCase(account.getRole()) && (ride.getDriverId() == null || !ride.getDriverId().equals(account.getId()))) {
+                throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view rides assigned to you.");
+            }
+        }
+        
+        return ResponseEntity.ok(ride);
     }
 
     @GetMapping("/passenger/{passengerId}")
     @PreAuthorize("hasAnyRole('PASSENGER', 'ADMIN')")
     @Operation(summary = "Get rides by passenger ID")
-    public ResponseEntity<List<RideResponse>> getRidesByPassenger(@PathVariable Long passengerId) {
+    public ResponseEntity<List<RideResponse>> getRidesByPassenger(@PathVariable Long passengerId,
+                                                                  @RequestHeader("Authorization") String token) {
+        AccountDTO account = accountClient.getCurrentAccount(token);
+        if ("PASSENGER".equalsIgnoreCase(account.getRole()) && !account.getId().equals(passengerId)) {
+            throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view your own rides.");
+        }
         return ResponseEntity.ok(rideService.getRidesByPassenger(passengerId));
     }
 
     @GetMapping("/driver/{driverId}")
     @PreAuthorize("hasAnyRole('DRIVER', 'ADMIN')")
     @Operation(summary = "Get rides by driver ID")
-    public ResponseEntity<List<RideResponse>> getRidesByDriver(@PathVariable Long driverId) {
+    public ResponseEntity<List<RideResponse>> getRidesByDriver(@PathVariable Long driverId,
+                                                               @RequestHeader("Authorization") String token) {
+        AccountDTO account = accountClient.getCurrentAccount(token);
+        if ("DRIVER".equalsIgnoreCase(account.getRole()) && !account.getId().equals(driverId)) {
+            throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view rides assigned to you.");
+        }
         return ResponseEntity.ok(rideService.getRidesByDriver(driverId));
     }
 }

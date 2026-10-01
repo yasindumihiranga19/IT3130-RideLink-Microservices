@@ -35,7 +35,7 @@ public class RideService {
     }
 
     @Transactional
-    public RideResponse createRide(Long passengerId, RideRequest request) {
+    public RideResponse createRide(Long passengerId, RideRequest request, String token) {
         Ride ride = Ride.builder()
                 .passengerId(passengerId)
                 .pickupLocation(request.getPickupLocation())
@@ -43,13 +43,27 @@ public class RideService {
                 .status(RideStatus.REQUESTED)
                 .build();
         
+        try {
+            FareResponseDTO fareEstimate = fareClient.estimateFare(request.getPickupLocation(), request.getDestinationLocation(), token);
+            if (fareEstimate != null && fareEstimate.getEstimatedFare() != null) {
+                ride.setEstimatedFare(fareEstimate.getEstimatedFare());
+            }
+        } catch (Exception e) {
+            // Log and ignore to allow ride creation even if fare estimate fails initially
+            System.err.println("Failed to calculate estimated fare: " + e.getMessage());
+        }
+        
         Ride saved = rideRepository.save(ride);
         return mapToResponse(saved);
     }
 
     @Transactional
-    public RideResponse assignDriver(Long rideId, String token) {
+    public RideResponse assignDriver(Long rideId, Long userId, String role, String token) {
         Ride ride = getRideById(rideId);
+        
+        if (!"ADMIN".equalsIgnoreCase(role) && !ride.getPassengerId().equals(userId)) {
+            throw new UnauthorizedRideOperationException("Only the requesting passenger can assign a driver to this ride.");
+        }
         
         if (ride.getStatus() != RideStatus.REQUESTED) {
             throw new InvalidRideStatusException("Can only assign driver to a REQUESTED ride.");
@@ -66,6 +80,8 @@ public class RideService {
         ride.setDriverId(assignedDriver.getId());
         ride.setStatus(RideStatus.ASSIGNED);
         ride.setAssignedAt(LocalDateTime.now());
+        
+        driverClient.updateAvailability(assignedDriver.getId(), "BUSY", token);
         
         Ride saved = rideRepository.save(ride);
         return mapToResponse(saved);
@@ -128,19 +144,17 @@ public class RideService {
             ride.setFinalFare(fareResponse.getFinalFare());
         }
         
+        driverClient.updateAvailability(ride.getDriverId(), "AVAILABLE", token);
+        
         return mapToResponse(rideRepository.save(ride));
     }
 
     @Transactional
-    public RideResponse cancelRide(Long rideId, Long userId, boolean isDriver, CancelRideRequest request) {
+    public RideResponse cancelRide(Long rideId, Long userId, boolean isDriver, CancelRideRequest request, String token) {
         Ride ride = getRideById(rideId);
         
         if (ride.getStatus() == RideStatus.COMPLETED) {
             throw new InvalidRideStatusException("Cannot cancel a COMPLETED ride.");
-        }
-        
-        if (ride.getStatus() == RideStatus.CANCELLED) {
-            return mapToResponse(ride); // idempotent
         }
 
         if (isDriver) {
@@ -151,6 +165,14 @@ public class RideService {
             if (!ride.getPassengerId().equals(userId)) {
                 throw new UnauthorizedRideOperationException("Only the requesting passenger can cancel this ride.");
             }
+        }
+        
+        if (ride.getStatus() == RideStatus.CANCELLED) {
+            return mapToResponse(ride); // idempotent
+        }
+        
+        if (ride.getDriverId() != null) {
+            driverClient.updateAvailability(ride.getDriverId(), "AVAILABLE", token);
         }
 
         ride.setStatus(RideStatus.CANCELLED);

@@ -38,19 +38,36 @@ public class FareClient {
         
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
         
-        try {
-            ResponseEntity<FareResponseDTO> response = restTemplate.exchange(
-                    fareServiceUrl + "/api/fares/calculate",
-                    HttpMethod.POST,
-                    entity,
-                    FareResponseDTO.class
-            );
-            return response.getBody();
-        } catch (Exception e) {
-            // If fare service is not fully implemented yet, we return a fallback fare.
-            FareResponseDTO fallback = new FareResponseDTO();
-            fallback.setFinalFare(new java.math.BigDecimal("25.00"));
-            return fallback;
+        ResponseEntity<FareResponseDTO> response = restTemplate.exchange(
+                fareServiceUrl + "/api/fares/calculate",
+                HttpMethod.POST,
+                entity,
+                FareResponseDTO.class
+        );
+        return response.getBody();
+    }
+
+    public FareResponseDTO estimateFare(String pickupLocation, String destinationLocation, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && token.startsWith("Bearer ")) {
+            headers.set("Authorization", token);
+        } else if (token != null) {
+            headers.set("Authorization", "Bearer " + token);
         }
+        
+        Map<String, Object> body = Map.of(
+            "pickupLocation", pickupLocation,
+            "destinationLocation", destinationLocation
+        );
+        
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+        
+        ResponseEntity<FareResponseDTO> response = restTemplate.exchange(
+                fareServiceUrl + "/api/fares/estimate",
+                HttpMethod.POST,
+                entity,
+                FareResponseDTO.class
+        );
+        return response.getBody();
     }
 }
