@@ -43,5 +43,28 @@ public class DriverClient {
         return response.getBody();
     }
     
+    public void updateAvailability(Long driverId, String status, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && token.startsWith("Bearer ")) {
+            headers.set("Authorization", token);
+        } else if (token != null) {
+            headers.set("Authorization", "Bearer " + token);
+        }
+        
+        java.util.Map<String, String> body = java.util.Map.of("availabilityStatus", status);
+        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(body, headers);
+        
+        try {
+            restTemplate.exchange(
+                    driverServiceUrl + "/api/drivers/" + driverId + "/availability",
+                    HttpMethod.PATCH,
+                    entity,
+                    Void.class
+            );
+        } catch (Exception e) {
+            System.err.println("Failed to update driver availability: " + e.getMessage());
+        }
+    }
+    
     private static class ParameterTypeReference<T> extends ParameterizedTypeReference<T> {}
 }
