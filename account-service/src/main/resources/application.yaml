@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
@@ -20,9 +20,10 @@ spring:
       enabled: always
   main:
     banner-mode: off
+
 admin:
   email: ${ADMIN_EMAIL}
-  password: ${ADMIN_PASSWORD}    
+  password: ${ADMIN_PASSWORD}
 
 jwt:
   secret: ${JWT_SECRET}

@@ -1,5 +1,6 @@
 package com.ridelink.account.security;
 
+import com.ridelink.account.enums.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -22,10 +23,11 @@ public class JwtService {
         );
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String email, Role role) {
 
         return Jwts.builder()
                 .subject(email)
+                .claim("role", role.name())
                 .issuedAt(new Date())
                 .expiration(
                         new Date(System.currentTimeMillis() + 86400000)

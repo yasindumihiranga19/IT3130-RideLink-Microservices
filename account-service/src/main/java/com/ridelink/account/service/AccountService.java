@@ -97,7 +97,7 @@ public class AccountService {
             );
         }
 
-        return jwtService.generateToken(account.getEmail());
+        return jwtService.generateToken(account.getEmail(), account.getRole());
     }
 
     
