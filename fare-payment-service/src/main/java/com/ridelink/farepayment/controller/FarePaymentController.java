@@ -61,7 +61,7 @@ public class FarePaymentController {
     })
     @PreAuthorize("hasRole('PASSENGER')")
     @PostMapping("/pay")
-    public ResponseEntity<Payment> processPayment(@RequestBody Payment paymentDetails) {
+    public ResponseEntity<Payment> processPayment(@Valid @RequestBody Payment paymentDetails) {
         Payment processedPayment = farePaymentService.processPayment(paymentDetails);
         
         if ("FAILED".equals(processedPayment.getStatus())) {

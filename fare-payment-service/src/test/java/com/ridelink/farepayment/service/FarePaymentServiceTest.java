@@ -14,9 +14,10 @@ import com.ridelink.farepayment.client.RideServiceClient;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,7 +50,7 @@ public class FarePaymentServiceTest {
     }
 
     @Test
-    public void testCalculateFinalFare() {
+    public void testCalculateFinalFare_Success() {
         // Arrange
         Long rideId = 1L;
         Long passengerId = 2L;
@@ -77,5 +78,67 @@ public class FarePaymentServiceTest {
         // Since both strings have length 1, distance = 0 * 1.5 + 2.0 = 2.0 km
         // Logic: Base (300.00) + (2.0km * 100.00 = 200.00) + (5mins * 20.00 = 100.00) = 600.00
         assertEquals(new BigDecimal("600.00"), finalPayment.getFinalFare());
+    }
+
+    @Test
+    public void testCalculateFinalFare_RideServiceFails() {
+        // Arrange
+        FareCalculateRequest request = new FareCalculateRequest();
+        request.setRideId(99L);
+        when(rideServiceClient.getRideDetails(eq(99L), any())).thenThrow(new RuntimeException("Service Down"));
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            farePaymentService.calculateFinalFare(request, "mock_token");
+        });
+        assertEquals("Could not fetch ride details from Ride Management Service", exception.getMessage());
+    }
+
+    @Test
+    public void testProcessPayment() {
+        // Arrange
+        Payment payment = new Payment();
+        payment.setAmount(new BigDecimal("500.00"));
+        
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // Act
+        Payment processed = farePaymentService.processPayment(payment);
+
+        // Assert
+        assertNotNull(processed);
+        assertTrue("COMPLETED".equals(processed.getStatus()) || "FAILED".equals(processed.getStatus()));
+    }
+
+    @Test
+    public void testGetReceipt_Found() {
+        // Arrange
+        UUID paymentId = UUID.randomUUID();
+        Payment payment = new Payment();
+        payment.setId(paymentId);
+        payment.setStatus("COMPLETED");
+
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+
+        // Act
+        Payment result = farePaymentService.getReceipt(paymentId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(paymentId, result.getId());
+        assertEquals("COMPLETED", result.getStatus());
+    }
+
+    @Test
+    public void testGetReceipt_NotFound() {
+        // Arrange
+        UUID paymentId = UUID.randomUUID();
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            farePaymentService.getReceipt(paymentId);
+        });
+        assertEquals("Payment not found", exception.getMessage());
     }
 }
