@@ -37,7 +37,7 @@ public class DriverClient {
                 driverServiceUrl + "/api/drivers/available",
                 HttpMethod.GET,
                 entity,
-                new ParameterTypeReference<>()
+                new ParameterizedTypeReference<List<DriverDTO>>() {}
         );
         
         return response.getBody();
@@ -66,5 +66,4 @@ public class DriverClient {
         }
     }
     
-    private static class ParameterTypeReference<T> extends ParameterizedTypeReference<T> {}
 }
