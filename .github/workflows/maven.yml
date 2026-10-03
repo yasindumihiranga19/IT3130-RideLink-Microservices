@@ -5,14 +5,31 @@ on:
     branches:
       - main
       - dev
+      - development
   pull_request:
     branches:
       - main
       - dev
+      - development
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: rootpassword
+          POSTGRES_DB: ride_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     strategy:
       fail-fast: false
@@ -41,4 +58,15 @@ jobs:
 
       - name: Build and test
         working-directory: ${{ matrix.service }}
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/ride_db
+          DB_USER: root
+          DB_PASSWORD: rootpassword
+          JWT_SECRET: super_secret_key_for_jwt_tokens_testing_in_ci_environment
+          ACCOUNT_SERVICE_URL: http://localhost:8081
+          DRIVER_SERVICE_URL: http://localhost:8082
+          RIDE_SERVICE_URL: http://localhost:8083
+          FARE_SERVICE_URL: http://localhost:8084
+          ADMIN_EMAIL: admin@test.com
+          ADMIN_PASSWORD: adminpassword
         run: ./mvnw clean test
