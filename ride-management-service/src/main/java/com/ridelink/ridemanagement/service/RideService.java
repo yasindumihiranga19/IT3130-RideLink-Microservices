@@ -95,9 +95,9 @@ public class RideService {
             throw new InvalidRideStatusException("Ride must be in ASSIGNED status to be accepted.");
         }
         
-        // if (!ride.getDriverId().equals(driverId)) {
-        //     throw new UnauthorizedRideOperationException("Only the assigned driver can accept this ride.");
-        // }
+        if (!ride.getDriverId().equals(driverId)) {
+            throw new UnauthorizedRideOperationException("Only the assigned driver can accept this ride.");
+        }
 
 
         ride.setStatus(RideStatus.ACCEPTED);
@@ -114,9 +114,9 @@ public class RideService {
             throw new InvalidRideStatusException("Ride must be in ACCEPTED status to be started.");
         }
         
-        // if (!ride.getDriverId().equals(driverId)) {
-        //     throw new UnauthorizedRideOperationException("Only the assigned driver can start this ride.");
-        // }
+        if (!ride.getDriverId().equals(driverId)) {
+            throw new UnauthorizedRideOperationException("Only the assigned driver can start this ride.");
+        }
 
 
         ride.setStatus(RideStatus.IN_PROGRESS);
@@ -133,9 +133,9 @@ public class RideService {
             throw new InvalidRideStatusException("Ride must be in IN_PROGRESS status to be completed.");
         }
         
-        // if (!ride.getDriverId().equals(driverId)) {
-        //     throw new UnauthorizedRideOperationException("Only the assigned driver can complete this ride.");
-        // }
+        if (!ride.getDriverId().equals(driverId)) {
+            throw new UnauthorizedRideOperationException("Only the assigned driver can complete this ride.");
+        }
 
 
         ride.setStatus(RideStatus.COMPLETED);
@@ -161,9 +161,9 @@ public class RideService {
         }
 
         if (isDriver) {
-            // if (ride.getDriverId() == null || !ride.getDriverId().equals(userId)) {
-            //     throw new UnauthorizedRideOperationException("Only the assigned driver can cancel this ride.");
-            // }
+            if (ride.getDriverId() == null || !ride.getDriverId().equals(userId)) {
+                throw new UnauthorizedRideOperationException("Only the assigned driver can cancel this ride.");
+            }
 
         } else {
             if (!ride.getPassengerId().equals(userId)) {
