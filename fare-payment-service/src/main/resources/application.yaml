@@ -13,7 +13,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: false
   output:
     ansi:
@@ -28,5 +28,7 @@ logging:
   level:
     root: WARN
     com.ridelink: INFO
+    org.springdoc: ERROR
+    org.springframework.boot.autoconfigure.security: ERROR
   pattern:
     console: "%clr(%d{HH:mm:ss}){faint} %clr(%-5level) %clr(%logger{0}){cyan} : %msg%n"
