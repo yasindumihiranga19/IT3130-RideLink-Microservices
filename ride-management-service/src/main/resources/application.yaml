@@ -1,0 +1,44 @@
+server:
+  port: 8083
+  error:
+    include-stacktrace: always
+    include-message: always
+
+spring:
+  application:
+    name: ride-management-service
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  output:
+    ansi:
+      enabled: always
+  main:
+    banner-mode: off
+
+
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    root: WARN
+    com.ridelink: INFO
+  pattern:
+    console: "%clr(%d{HH:mm:ss}){faint} %clr(%-5level) %clr(%logger{0}){cyan} : %msg%n"
+
+services:
+  account-service:
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+  driver-service:
+    url: ${DRIVER_SERVICE_URL:http://localhost:8082}
+  fare-service:
+    url: ${FARE_SERVICE_URL:http://localhost:8084}
