@@ -130,7 +130,7 @@ public class RideController {
     @Operation(summary = "Get rides by driver ID")
     public ResponseEntity<List<RideResponse>> getRidesByDriver(@PathVariable Long driverId,
                                                                @RequestHeader("Authorization") String token) {
-        AccountDTO account = accountClient.getCurrentAccount(token);
+        // AccountDTO account = accountClient.getCurrentAccount(token);
         // if ("DRIVER".equalsIgnoreCase(account.getRole()) && !account.getId().equals(driverId)) {
         //     throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view rides assigned to you.");
         // }
