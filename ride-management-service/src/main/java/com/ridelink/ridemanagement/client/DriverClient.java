@@ -42,6 +42,26 @@ public class DriverClient {
         
         return response.getBody();
     }
+
+    public DriverDTO getDriverById(Long id, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && token.startsWith("Bearer ")) {
+            headers.set("Authorization", token);
+        } else if (token != null) {
+            headers.set("Authorization", "Bearer " + token);
+        }
+        
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        
+        ResponseEntity<DriverDTO> response = restTemplate.exchange(
+                driverServiceUrl + "/api/drivers/" + id,
+                HttpMethod.GET,
+                entity,
+                DriverDTO.class
+        );
+        
+        return response.getBody();
+    }
     
     public void updateAvailability(Long driverId, String status, String token) {
         HttpHeaders headers = new HttpHeaders();

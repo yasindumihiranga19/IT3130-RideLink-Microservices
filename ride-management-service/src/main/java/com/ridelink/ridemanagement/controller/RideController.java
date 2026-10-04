@@ -57,7 +57,7 @@ public class RideController {
     public ResponseEntity<RideResponse> acceptRide(@PathVariable Long id,
                                                    @RequestHeader("Authorization") String token) {
         AccountDTO driver = accountClient.getCurrentAccount(token);
-        RideResponse response = rideService.acceptRide(id, driver.getId());
+        RideResponse response = rideService.acceptRide(id, driver, token);
         return ResponseEntity.ok(response);
     }
 
@@ -67,7 +67,7 @@ public class RideController {
     public ResponseEntity<RideResponse> startRide(@PathVariable Long id,
                                                   @RequestHeader("Authorization") String token) {
         AccountDTO driver = accountClient.getCurrentAccount(token);
-        RideResponse response = rideService.startRide(id, driver.getId());
+        RideResponse response = rideService.startRide(id, driver, token);
         return ResponseEntity.ok(response);
     }
 
@@ -77,7 +77,7 @@ public class RideController {
     public ResponseEntity<RideResponse> completeRide(@PathVariable Long id,
                                                      @RequestHeader("Authorization") String token) {
         AccountDTO driver = accountClient.getCurrentAccount(token);
-        RideResponse response = rideService.completeRide(id, driver.getId(), token);
+        RideResponse response = rideService.completeRide(id, driver, token);
         return ResponseEntity.ok(response);
     }
 
@@ -105,8 +105,8 @@ public class RideController {
             if ("PASSENGER".equalsIgnoreCase(account.getRole()) && !ride.getPassengerId().equals(account.getId())) {
                 throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view your own rides.");
             }
-            if ("DRIVER".equalsIgnoreCase(account.getRole()) && (ride.getDriverId() == null || !ride.getDriverId().equals(account.getId()))) {
-                throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view rides assigned to you.");
+            if ("DRIVER".equalsIgnoreCase(account.getRole()) && ride.getDriverId() == null) {
+                throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view rides that have a driver assigned.");
             }
         }
         

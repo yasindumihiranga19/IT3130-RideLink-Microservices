@@ -4,6 +4,7 @@ import com.ridelink.ridemanagement.client.DriverClient;
 import com.ridelink.ridemanagement.client.FareClient;
 import com.ridelink.ridemanagement.dto.CancelRideRequest;
 import com.ridelink.ridemanagement.dto.DriverDTO;
+import com.ridelink.ridemanagement.dto.AccountDTO;
 import com.ridelink.ridemanagement.dto.FareResponseDTO;
 import com.ridelink.ridemanagement.dto.RideRequest;
 import com.ridelink.ridemanagement.dto.RideResponse;
@@ -88,14 +89,15 @@ public class RideService {
     }
 
     @Transactional
-    public RideResponse acceptRide(Long rideId, Long driverId) {
+    public RideResponse acceptRide(Long rideId, AccountDTO driverAccount, String token) {
         Ride ride = getRideById(rideId);
         
         if (ride.getStatus() != RideStatus.ASSIGNED) {
             throw new InvalidRideStatusException("Ride must be in ASSIGNED status to be accepted.");
         }
         
-        if (!ride.getDriverId().equals(driverId)) {
+        DriverDTO assignedDriver = driverClient.getDriverById(ride.getDriverId(), token);
+        if (assignedDriver == null || !assignedDriver.getEmail().equalsIgnoreCase(driverAccount.getEmail())) {
             throw new UnauthorizedRideOperationException("Only the assigned driver can accept this ride.");
         }
 
@@ -107,14 +109,15 @@ public class RideService {
     }
 
     @Transactional
-    public RideResponse startRide(Long rideId, Long driverId) {
+    public RideResponse startRide(Long rideId, AccountDTO driverAccount, String token) {
         Ride ride = getRideById(rideId);
         
         if (ride.getStatus() != RideStatus.ACCEPTED) {
             throw new InvalidRideStatusException("Ride must be in ACCEPTED status to be started.");
         }
         
-        if (!ride.getDriverId().equals(driverId)) {
+        DriverDTO assignedDriver = driverClient.getDriverById(ride.getDriverId(), token);
+        if (assignedDriver == null || !assignedDriver.getEmail().equalsIgnoreCase(driverAccount.getEmail())) {
             throw new UnauthorizedRideOperationException("Only the assigned driver can start this ride.");
         }
 
@@ -126,14 +129,15 @@ public class RideService {
     }
 
     @Transactional
-    public RideResponse completeRide(Long rideId, Long driverId, String token) {
+    public RideResponse completeRide(Long rideId, AccountDTO driverAccount, String token) {
         Ride ride = getRideById(rideId);
         
         if (ride.getStatus() != RideStatus.IN_PROGRESS) {
             throw new InvalidRideStatusException("Ride must be in IN_PROGRESS status to be completed.");
         }
         
-        if (!ride.getDriverId().equals(driverId)) {
+        DriverDTO assignedDriver = driverClient.getDriverById(ride.getDriverId(), token);
+        if (assignedDriver == null || !assignedDriver.getEmail().equalsIgnoreCase(driverAccount.getEmail())) {
             throw new UnauthorizedRideOperationException("Only the assigned driver can complete this ride.");
         }
 

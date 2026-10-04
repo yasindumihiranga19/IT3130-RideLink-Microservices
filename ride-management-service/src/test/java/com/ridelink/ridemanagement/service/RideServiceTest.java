@@ -4,6 +4,7 @@ import com.ridelink.ridemanagement.client.DriverClient;
 import com.ridelink.ridemanagement.client.FareClient;
 import com.ridelink.ridemanagement.dto.CancelRideRequest;
 import com.ridelink.ridemanagement.dto.DriverDTO;
+import com.ridelink.ridemanagement.dto.AccountDTO;
 import com.ridelink.ridemanagement.dto.FareResponseDTO;
 import com.ridelink.ridemanagement.dto.RideRequest;
 import com.ridelink.ridemanagement.dto.RideResponse;
@@ -99,10 +100,17 @@ class RideServiceTest {
         ride.setStatus(RideStatus.ASSIGNED);
         ride.setDriverId(20L);
 
+        AccountDTO driverAccount = new AccountDTO();
+        driverAccount.setEmail("driver@test.com");
+        
+        DriverDTO driverDto = new DriverDTO();
+        driverDto.setEmail("driver@test.com");
+
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
+        when(driverClient.getDriverById(20L, "token")).thenReturn(driverDto);
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
 
-        RideResponse res = rideService.acceptRide(1L, 20L);
+        RideResponse res = rideService.acceptRide(1L, driverAccount, "token");
 
         assertEquals(RideStatus.ACCEPTED, res.getStatus());
     }
@@ -112,9 +120,16 @@ class RideServiceTest {
         ride.setStatus(RideStatus.ASSIGNED);
         ride.setDriverId(20L);
 
-        when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
+        AccountDTO driverAccount = new AccountDTO();
+        driverAccount.setEmail("wrong@test.com");
+        
+        DriverDTO driverDto = new DriverDTO();
+        driverDto.setEmail("driver@test.com");
 
-        assertThrows(UnauthorizedRideOperationException.class, () -> rideService.acceptRide(1L, 99L));
+        when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
+        when(driverClient.getDriverById(20L, "token")).thenReturn(driverDto);
+
+        assertThrows(UnauthorizedRideOperationException.class, () -> rideService.acceptRide(1L, driverAccount, "token"));
     }
 
     @Test
@@ -122,10 +137,17 @@ class RideServiceTest {
         ride.setStatus(RideStatus.ACCEPTED);
         ride.setDriverId(20L);
 
+        AccountDTO driverAccount = new AccountDTO();
+        driverAccount.setEmail("driver@test.com");
+        
+        DriverDTO driverDto = new DriverDTO();
+        driverDto.setEmail("driver@test.com");
+
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
+        when(driverClient.getDriverById(20L, "token")).thenReturn(driverDto);
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
 
-        RideResponse res = rideService.startRide(1L, 20L);
+        RideResponse res = rideService.startRide(1L, driverAccount, "token");
 
         assertEquals(RideStatus.IN_PROGRESS, res.getStatus());
     }
@@ -138,11 +160,18 @@ class RideServiceTest {
         FareResponseDTO fareRes = new FareResponseDTO();
         fareRes.setFinalFare(new BigDecimal("15.50"));
 
+        AccountDTO driverAccount = new AccountDTO();
+        driverAccount.setEmail("driver@test.com");
+        
+        DriverDTO driverDto = new DriverDTO();
+        driverDto.setEmail("driver@test.com");
+
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
+        when(driverClient.getDriverById(20L, "token")).thenReturn(driverDto);
         when(fareClient.calculateFare(1L, "A", "B", "token")).thenReturn(fareRes);
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
 
-        RideResponse res = rideService.completeRide(1L, 20L, "token");
+        RideResponse res = rideService.completeRide(1L, driverAccount, "token");
 
         assertEquals(RideStatus.COMPLETED, res.getStatus());
         assertEquals(new BigDecimal("15.50"), res.getFinalFare());
@@ -153,7 +182,8 @@ class RideServiceTest {
         ride.setStatus(RideStatus.REQUESTED);
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
 
-        assertThrows(InvalidRideStatusException.class, () -> rideService.completeRide(1L, 20L, "token"));
+        AccountDTO driverAccount = new AccountDTO();
+        assertThrows(InvalidRideStatusException.class, () -> rideService.completeRide(1L, driverAccount, "token"));
     }
 
     @Test
