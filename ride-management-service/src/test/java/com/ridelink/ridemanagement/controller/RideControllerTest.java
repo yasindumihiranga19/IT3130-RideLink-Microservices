@@ -97,7 +97,13 @@ public class RideControllerTest {
         otherDriver.setId(88L);
         otherDriver.setRole("DRIVER");
 
-        when(rideService.getRideResponseById(100L)).thenReturn(rideResponse);
+        RideResponse unassignedRide = RideResponse.builder()
+                .id(100L)
+                .passengerId(1L)
+                .driverId(null)
+                .build();
+
+        when(rideService.getRideResponseById(100L)).thenReturn(unassignedRide);
         when(accountClient.getCurrentAccount(token)).thenReturn(otherDriver);
 
         assertThrows(UnauthorizedRideOperationException.class, () -> {
